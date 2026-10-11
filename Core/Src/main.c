@@ -23,6 +23,8 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "ssd1306.h"
+#include <stdlib.h>
+#include "dht22.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -153,6 +155,7 @@ int main(void)
       ssd1306_update();
       printf("OLED drawn\r\n");
   }
+  dht22_init();
   /* USER CODE END 2 */
 
   /* Initialize leds */
@@ -167,13 +170,30 @@ int main(void)
   {
     /* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
-	  BSP_LED_Toggle(LED2);
-	  printf("light raw = %lu\r\n", light_read());
-	  HAL_Delay(500);
-  }
-  /* USER CODE END 3 */
-}
+	    /* USER CODE BEGIN 3 */
+	    BSP_LED_Toggle(LED2);
+
+	    static uint32_t last_dht = 0;
+	    if (HAL_GetTick() - last_dht >= 2000)   /* DHT22: at most one read every 2 s */
+	    {
+	        last_dht = HAL_GetTick();
+	        int16_t t; uint16_t h;
+	        dht22_status_t s = dht22_read(&t, &h);
+	        if (s == DHT22_OK)
+	            printf("Temp: %s%d.%d C  Hum: %u.%u %%\r\n",
+	                   (t < 0) ? "-" : "", abs(t) / 10, abs(t) % 10, h / 10, h % 10);
+	        else if (s == DHT22_ERR_CHECKSUM)
+	            printf("DHT22 checksum error\r\n");
+	        else
+	            printf("DHT22 timeout\r\n");
+	    }
+
+	    printf("light raw = %lu\r\n", light_read());
+	    HAL_Delay(500);
+	  }
+	  /* USER CODE END 3 */
+	}
+
 
 /**
   * @brief System Clock Configuration
@@ -327,7 +347,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 83;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 4294967295;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
