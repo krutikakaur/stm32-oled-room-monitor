@@ -14,4 +14,6 @@ void dht22_init(void);
 /* Values are in tenths: 253 = 25.3 degC / 25.3 %RH */
 dht22_status_t dht22_read(int16_t *temp_x10, uint16_t *hum_x10);
 
+extern uint16_t dht22_dbg_widths[40];
+
 #endif

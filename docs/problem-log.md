@@ -7,6 +7,7 @@
 | 2026-10-10 | Couldn't find PB8/PB9 as I2C pins | Opened the pin menu for PC8 by mistake | Searched for PB8/PB9 in the pinout view and assigned I2C1_SCL/SDA |
 | 2026-10-11 | ADC readings were random with no sensor connected | Values jumped around with nothing on PA0 | Expected behavior: floating input. Readings became stable once the module was wired |
 | 2026-10-11 | LDR module reads higher when darker | Covered and lit the sensor and compared raw values | Inverted in software: `brightness = 4095 - raw` |
+| 2026-10-11| DHT22 read block was placed after the while(1) loop and never ran. No output at all, not even a timeout message, was the clue. Moved it inside the loop.|
 
 ## Lessons
 - Only edit code inside `USER CODE` markers, or regeneration erases it.

@@ -179,13 +179,22 @@ int main(void)
 	        last_dht = HAL_GetTick();
 	        int16_t t; uint16_t h;
 	        dht22_status_t s = dht22_read(&t, &h);
-	        if (s == DHT22_OK)
-	            printf("Temp: %s%d.%d C  Hum: %u.%u %%\r\n",
-	                   (t < 0) ? "-" : "", abs(t) / 10, abs(t) % 10, h / 10, h % 10);
-	        else if (s == DHT22_ERR_CHECKSUM)
+	        if (s == DHT22_OK) {
+	        	printf("Temp: %s%d.%d C  Hum: %u.%u %%\r\n", (t < 0) ? "-" : "", abs(t) / 10, abs(t) % 10, h / 10, h % 10);
+
+	        	for (int i = 0; i < 40; i++) {
+	        	    printf("%u ", dht22_dbg_widths[i]);
+	        	}
+	        	printf("\r\n");
+
+	        }
+
+	        	else if (s == DHT22_ERR_CHECKSUM) {
 	            printf("DHT22 checksum error\r\n");
-	        else
+	        }
+	        else {
 	            printf("DHT22 timeout\r\n");
+	        }
 	    }
 
 	    printf("light raw = %lu\r\n", light_read());

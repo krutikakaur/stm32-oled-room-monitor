@@ -1,9 +1,10 @@
 #include "dht22.h"
-
 extern TIM_HandleTypeDef htim2;   /* must run at 1 MHz (prescaler 83) */
 
 #define DHT_PORT GPIOA
 #define DHT_PIN  GPIO_PIN_1
+uint16_t dht22_dbg_widths[40];
+
 
 static inline uint32_t now_us(void)
 {
@@ -56,6 +57,7 @@ dht22_status_t dht22_read(int16_t *temp_x10, uint16_t *hum_x10)
     {
         if (wait_level(GPIO_PIN_SET, 100) < 0) goto timeout;
         int high_us = wait_level(GPIO_PIN_RESET, 150);
+        dht22_dbg_widths[i] = (uint16_t)high_us;
         if (high_us < 0) goto timeout;
 
         d[i / 8] <<= 1;
