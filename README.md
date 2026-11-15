@@ -2,12 +2,12 @@
 An embedded room monitoring system built with an **STM32F4 Nucleo board**, featuring a DHT22 temperature/humidity sensor, an ADC ambient light sensor, and an I2C OLED display.
 
 ## Project Demo
-![Working Room Monitor](assets/OLED_display.jpeg)
-![Working Room Monitor](assets/terminal_output_putty.jpg)
+![Working Room Monitor](Assets/OLED_display.jpeg)
+![Working Room Monitor](Assets/terminal_output_putty.jpg)
 
 
 ## Wiring Setup
-![Circuit Connection](assets/stm32_circuit_board.jpeg)
+![Circuit Connection](Assets/stm32_circuit_board.jpeg)
 
 ## 🚀 Features
 * **Asynchronous Sensor Polling:** Decouples fast light sensor reads (every 0.5s) from slower DHT22 temperature/humidity reads (every 2s) to prevent blocking the main loop.
