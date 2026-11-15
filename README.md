@@ -7,7 +7,7 @@ An embedded room monitoring system built with an **STM32F4 Nucleo board**, featu
 
 
 ## Wiring Setup
-![Circuit Connection](<img width="3589" height="2692" alt="stm32_circuit_board" src="https://github.com/user-attachments/assets/40cc9006-055b-4d38-b401-5cb29707df68" />)
+![Circuit Connection](<img width="439" height="329" alt="image" src="https://github.com/user-attachments/assets/2239f70f-ae73-4ae6-ac89-78d75cd94aae" />)
 
 ## 🚀 Features
 * **Asynchronous Sensor Polling:** Decouples fast light sensor reads (every 0.5s) from slower DHT22 temperature/humidity reads (every 2s) to prevent blocking the main loop.
