@@ -25,6 +25,7 @@
 #include "ssd1306.h"
 #include <stdlib.h>
 #include "dht22.h"
+#include "ssd1306_fonts.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,7 +46,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc1; // HAL handle = holds one peripherals setting and state. Global
 
 I2C_HandleTypeDef hi2c1;
 
@@ -58,7 +59,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
+void SystemClock_Config(void);//functions, static so only visible in this file
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
@@ -70,15 +71,15 @@ static void MX_I2C1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int __io_putchar(int ch)
+int __io_putchar(int ch) //helper function -- making printf talk to PC
 {
     HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
     return ch;
 }
 
-static void i2c_scan(void)
+static void i2c_scan(void) //helper function -- scanning for I2C devices (finding its address)
 {
-    printf("Scanning I2C...\r\n");
+    printf("Scanning I2C\r\n");
     for (uint8_t addr = 1; addr < 128; addr++)
     {
         if (HAL_I2C_IsDeviceReady(&hi2c1, addr << 1, 1, 10) == HAL_OK)
@@ -89,11 +90,11 @@ static void i2c_scan(void)
     printf("Scan done\r\n");
 }
 
-static uint32_t light_read(void)
+static uint32_t light_read(void) //helper -- read the light sensor
 {
-    HAL_ADC_Start(&hadc1);
-    HAL_ADC_PollForConversion(&hadc1, 10);
-    return HAL_ADC_GetValue(&hadc1);
+    HAL_ADC_Start(&hadc1); //start measuring
+    HAL_ADC_PollForConversion(&hadc1, 10);//wait until its done
+    return HAL_ADC_GetValue(&hadc1);//give back number
 }
 /* USER CODE END 0 */
 
@@ -111,21 +112,21 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+  HAL_Init(); // start HAL library
 
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
 
   /* Configure the system clock */
-  SystemClock_Config();
+  SystemClock_Config(); // set clock speed
 
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-  MX_GPIO_Init();
+  MX_GPIO_Init(); // 
   MX_ADC1_Init();
   MX_TIM2_Init();
   MX_USART2_UART_Init();
@@ -133,28 +134,12 @@ int main(void)
   /* USER CODE BEGIN 2 */
   printf("\r\nBoot OK\r\n");
   i2c_scan();
-  if (ssd1306_init() != HAL_OK)
-  {
-      printf("OLED init failed\r\n");
-  }
-  else
-  {
-      for (uint8_t x = 0; x < 128; x++)
-      {
-          ssd1306_set_pixel(x, 0, 1);
-          ssd1306_set_pixel(x, 63, 1);
-      }
-      for (uint8_t y = 0; y < 64; y++)
-      {
-          ssd1306_set_pixel(0, y, 1);
-          ssd1306_set_pixel(127, y, 1);
-      }
-      for (uint8_t i = 0; i < 64; i++)
-          ssd1306_set_pixel(i * 2, i, 1);
+  ssd1306_Init();
+  ssd1306_SetCursor(0,0);
+  ssd1306_WriteString("hello",Font_7x10, White);
+  ssd1306_UpdateScreen(); //display all pixels
+  printf("OLED drawn\r\n");
 
-      ssd1306_update();
-      printf("OLED drawn\r\n");
-  }
   dht22_init();
   /* USER CODE END 2 */
 
@@ -164,23 +149,25 @@ int main(void)
   /* Initialize USER push-button, will be used to trigger an interrupt each time it's pressed.*/
   BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
-  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
 
 	    /* USER CODE BEGIN 3 */
-	    BSP_LED_Toggle(LED2);
+	    BSP_LED_Toggle(LED2);//flip green LED on off every pass
+	    static int16_t t_display = 0;
+	    static uint16_t h_display = 0;
 
 	    static uint32_t last_dht = 0;
 	    if (HAL_GetTick() - last_dht >= 2000)   /* DHT22: at most one read every 2 s */
 	    {
-	        last_dht = HAL_GetTick();
-	        int16_t t; uint16_t h;
+	        last_dht = HAL_GetTick();//milliseconds since power on
+	        int16_t t; uint16_t h; //boxes for temp and humidity
 	        dht22_status_t s = dht22_read(&t, &h);
 	        if (s == DHT22_OK) {
-	        	printf("Temp: %s%d.%d C  Hum: %u.%u %%\r\n", (t < 0) ? "-" : "", abs(t) / 10, abs(t) % 10, h / 10, h % 10);
+	        	t_display = t; // save temperature for the screen
+	        	h_display = h;
 
 	        	for (int i = 0; i < 40; i++) {
 	        	    printf("%u ", dht22_dbg_widths[i]);
@@ -196,9 +183,34 @@ int main(void)
 	            printf("DHT22 timeout\r\n");
 	        }
 	    }
+	    char lightmsg[50];
+	    char tempmsg[50];
+	    char humidmsg[50];
 
-	    printf("light raw = %lu\r\n", light_read());
-	    HAL_Delay(500);
+
+
+	    snprintf(lightmsg, sizeof(lightmsg),"Light Raw = %lu\r\n", light_read());
+	    snprintf(tempmsg, sizeof(tempmsg), "Temp: %s%d.%d C", (t_display < 0) ? "-" : "", abs(t_display) / 10, abs(t_display) % 10);
+	    snprintf(humidmsg, sizeof(humidmsg), "Humidity: %s%d.%d",(h_display < 0) ? "-" : "", abs(h_display) / 10, abs(h_display) % 10);
+
+	    ssd1306_Fill(Black);
+
+	    ssd1306_SetCursor(16,5);
+	    ssd1306_DrawCircle(9,3,2,White);
+	    ssd1306_DrawCircle(3,9,2,White);
+	    ssd1306_WriteString("room monitor", Font_7x10, White);
+
+	    ssd1306_SetCursor(0,18);
+	    ssd1306_WriteString(lightmsg, Font_7x10, White);
+
+	    ssd1306_SetCursor(0,35);
+	    ssd1306_WriteString(tempmsg, Font_7x10, White);
+
+	    ssd1306_SetCursor(0,52);
+	    ssd1306_WriteString(humidmsg, Font_7x10, White);
+
+	    ssd1306_UpdateScreen();
+	    HAL_Delay(500);//freeze program during wait
 	  }
 	  /* USER CODE END 3 */
 	}
